@@ -3,6 +3,7 @@ import random
 import sys
 import time
 from A_star import a_star_algorithm
+from Deep_neural_network import *
 
 pygame.init()
 
@@ -139,6 +140,16 @@ def handle_food_interaction(snake, food_position, grid_size):
         # print(snake)
     return food_position
 
+# 用于训练神经网络时，获得当前的状态文件
+def get_current_state(snake, food_position, grid_size):
+    snake_head = snake[0]
+    direction_vector, distance = get_food_direction_and_distance(snake_head, food_position)
+    body_distances = get_body_distances(snake, grid_size)
+
+    # 将这些信息组合成一个状态向量
+    state = direction_vector + (distance,) + tuple(body_distances)
+    return state
+
 
 # 开始界面
 def show_start_screen():
@@ -155,7 +166,8 @@ def show_start_screen():
         ("A-Star Algorithm", column2_x, screen_size // 2 - (button_height + spacing)),
         ("Genetic Algorithm", column1_x, screen_size // 2),
         ("Q-Learning", column2_x, screen_size // 2),
-        ("CNN", column1_x, screen_size // 2 + (button_height + spacing))
+        ("CNN", column1_x, screen_size // 2 + (button_height + spacing)),
+        ("DNN", column2_x, screen_size // 2 + (button_height + spacing))
     ]
 
     running = True
@@ -181,6 +193,8 @@ def show_start_screen():
                         game_loop_q_learning()
                     elif text == "CNN":
                         game_loop_cnn()
+                    elif text == "DNN":
+                        game_loop_dnn()
                     running = False
 
 
@@ -316,6 +330,7 @@ def game_loop_a_star():
 
         # 移动蛇：将路径的下一个位置设为新的蛇头
         if path:
+            print(snake)
             new_head = path.pop(0)
             direction = get_direction(snake[0], new_head)
             snake.insert(0, new_head)
@@ -398,6 +413,53 @@ def game_loop_cnn():
     print("Starting CNN game loop...")
     # 在这里实现使用卷积神经网络的游戏逻辑
     pass
+
+
+def game_loop_dnn():
+    running = True
+    snake = [(grid_size // 2, grid_size // 2)]  # 初始蛇的位置
+    food_position = place_food(grid_size, snake)
+    # model, _ = init_model(INPUT_SIZE, HIDDEN_SIZE, OUTPUT_SIZE, LEARNING_RATE)  # 初始化模型和优化器
+    direction = 'UP'  # 初始方向
+
+    while running:
+        screen.fill(BLACK)
+
+        current_state = get_current_state(snake, food_position, grid_size)
+        action = predict(model, current_state)  # 使用模型预测下一步动作
+
+        # "'先用一下随机动作选择，看看能不能跑动代码'"
+        # # 随机选择动作
+        # action = random.choice(['UP', 'DOWN', 'LEFT', 'RIGHT'])
+        # print(snake)
+        # 更新蛇的位置
+        new_head = update_snake(snake, action)
+
+        # 检查是否碰到自己或超出边界
+        if new_head in snake or not (0 <= new_head[0] < grid_size and 0 <= new_head[1] < grid_size):
+            running = False
+            show_start_screen()
+            continue
+
+        snake.insert(0, new_head)  # 在列表前插入新的蛇头
+
+        if new_head == food_position:
+            food_position = place_food(grid_size, snake)  # 重新放置食物
+        else:
+            snake.pop()  # 移除蛇尾
+
+        # 绘制游戏元素
+        draw_grid()
+        draw_snake(snake, action)
+        pygame.draw.rect(screen, RED, (
+        food_position[0] * cell_size, food_position[1] * cell_size + score_height, cell_size, cell_size))
+
+        # 更新屏幕显示
+        pygame.display.flip()
+
+        time.sleep(0.1)  # 控制游戏速度
+
+    pygame.quit()
 
 
 
