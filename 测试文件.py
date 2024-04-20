@@ -494,7 +494,7 @@ def game_loop_deep_q_learning_test():
         # 更新屏幕显示
         pygame.display.flip()
 
-        time.sleep(0.01)  # 控制游戏速度
+        time.sleep(0.1)  # 控制游戏速度
     pygame.quit()
 
 
@@ -576,6 +576,8 @@ def game_loop_deep_q_learning_train():
 
             # 计算奖励和是否完成
             reward = 0
+            # 用于记录无意义的步数
+            steps_since_last_reward = 0
             done = False
             # 做出行动后更新蛇list
             new_head = update_snake(snake, action)
@@ -599,9 +601,16 @@ def game_loop_deep_q_learning_train():
                     current_min_distance = float('inf')  # 重置最小距离
                     closest_breakthroughs = 0  # 重置突破计数
                     snake.insert(0, new_head)  # 在列表前插入新的蛇头
+                    steps_since_last_reward = 0  # 重置记录步数（防止重复用的）
                 else:
                     snake.insert(0, new_head)  # 在列表前插入新的蛇头
                     snake.pop()  # 移除蛇尾
+                    steps_since_last_reward += 1
+            if steps_since_last_reward >= len(snake) * 10:
+                reward -= 1  # 连续多步未获得奖励，开始减分
+            if steps_since_last_reward >= len(snake) * 20:
+                reward -= 20
+                done = True  # 如果超过100步未获得奖励，则结束游戏
 
             replay_buffer.push(current_state, action_index, reward, next_state, done)
             train_model(model, optimizer, replay_buffer, batch_size=32)
@@ -668,18 +677,47 @@ def game_loop_deep_q_learning_train():
 
 
 
-def calculate_reward(snake, food_position, new_head, current_min_distance):
-    if new_head == food_position:
-        return 10, False
-    elif new_head in snake or not (0 <= new_head[0] < grid_size and 0 <= new_head[1] < grid_size):
-        return -20, True
-    else:
-        new_distance = abs(new_head[0] - food_position[0]) + abs(new_head[1] - food_position[1])
-        if new_distance < current_min_distance:
-            current_min_distance = new_distance
-            return 1, False
-        return 0, False
+# def calculate_reward(snake, food_position, new_head, current_min_distance):
+#     if new_head == food_position:
+#         return 10, False
+#     elif new_head in snake or not (0 <= new_head[0] < grid_size and 0 <= new_head[1] < grid_size):
+#         return -20, True
+#     else:
+#         new_distance = abs(new_head[0] - food_position[0]) + abs(new_head[1] - food_position[1])
+#         if new_distance < current_min_distance:
+#             current_min_distance = new_distance
+#             return 1, False
+#         return 0, False
 
+# # V2 -加上，如果连续（蛇长度*10）步内，没有得到奖励，接下来每走一步都会扣1分，如果100步没有获得奖励，则直接结束游戏并扣10分
+# def calculate_reward(snake, food_position, new_head, current_min_distance, steps_since_last_food, snake_length):
+#     # 如果蛇头位置和食物位置一致
+#     if new_head == food_position:
+#         steps_since_last_food = 0  # 重置计数器
+#         return 10, False, steps_since_last_food  # 吃到食物，奖励10分，不结束游戏
+#
+#     # 如果蛇撞到自己或边界
+#     if new_head in snake or not (0 <= new_head[0] < grid_size and 0 <= new_head[1] < grid_size):
+#         return -20, True, steps_since_last_food  # 碰撞，惩罚20分，结束游戏
+#
+#     # 计算到食物的新距离
+#     new_distance = abs(new_head[0] - food_position[0]) + abs(new_head[1] - food_position[1])
+#     if new_distance < current_min_distance:
+#         current_min_distance = new_distance  # 更新最小距离
+#         steps_since_last_food = 0  # 重置计数器
+#         return 1, False, steps_since_last_food  # 接近食物，奖励1分，不结束游戏
+
+#     # 更新步数计数器
+#     steps_since_last_food += 1
+#
+#     # 如果连续无效步数超过阈值，开始减分
+#     if steps_since_last_food > snake_length * 10:
+#         reward = -1  # 每步减1分
+#         if steps_since_last_food > 100:
+#             return reward - 10, True, steps_since_last_food  # 100步未得到食物，额外惩罚，结束游戏
+#         return reward, False, steps_since_last_food
+#
+#     return 0, False, steps_since_last_food  # 其他情况，无奖励也无惩罚
 def show_game_over_screen():
     running = True
     while running:
