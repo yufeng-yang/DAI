@@ -5,12 +5,12 @@ import torch.optim as optim
 import torch
 import torch.nn as nn
 import torch.optim as optim
-import random
-from collections import deque
 import torch
 import torch.nn.functional as F
-import os
 from torch.utils.tensorboard import SummaryWriter
+from collections import deque
+import random
+import os
 
 
 # 神经网络结构
@@ -49,36 +49,45 @@ class ReplayBuffer:
 
 # 日志文件的生成有关代码
 class Trainer:
-    def __init__(self, model, optimizer):
+    def __init__(self, model, optimizer, log_dir='runs'):
         self.model = model
         self.optimizer = optimizer
-        self.writer = SummaryWriter()
-        self.global_step = 0  # 初始化global_step
+        self.writer = SummaryWriter(log_dir)
+        self.global_step = 0
 
-    def train_model(self, replay_buffer, batch_size=32):
+    def train_model(self, replay_buffer, batch_size):
+        # 缓存中的数据不足以形成一个完整的批次，不执行训练
         if len(replay_buffer) < batch_size:
             return
+
         transitions = replay_buffer.sample(batch_size)
         batch = list(zip(*transitions))
+
         state_batch = torch.tensor(batch[0], dtype=torch.float32)
         action_batch = torch.tensor(batch[1], dtype=torch.long)
         reward_batch = torch.tensor(batch[2], dtype=torch.float32)
         next_state_batch = torch.tensor(batch[3], dtype=torch.float32)
         done_batch = torch.tensor(batch[4], dtype=torch.float32)
 
+        # 计算当前状态下模型预测的Q值
         q_values = self.model(state_batch)
         state_action_values = q_values.gather(1, action_batch.unsqueeze(1)).squeeze(1)
 
+        # 计算下一个状态的最大预测Q值
         next_q_values = self.model(next_state_batch).max(1)[0]
+        # 对于游戏结束的状态，我们将它的Q值设为0
         next_q_values[done_batch.bool()] = 0.0
 
+        # 计算预期Q值
         expected_q_values = (next_q_values * 0.99) + reward_batch
         loss = torch.nn.functional.mse_loss(state_action_values, expected_q_values)
 
+        # 计算损失
         self.optimizer.zero_grad()
         loss.backward()
         self.optimizer.step()
 
+        # 添加日志
         self.writer.add_scalar('Loss/train', loss.item(), self.global_step)
         self.global_step += 1  # 每次训练迭代后递增global_step
 
@@ -144,40 +153,6 @@ def predict(model, state):
         action_probs = model(state_tensor)
         action = action_probs.argmax().item()
     return action
-
-
-# 模型训练函数
-def train_model(model, optimizer, replay_buffer, batch_size):
-    if len(replay_buffer) < batch_size:
-        return  # 缓存中的数据不足以形成一个完整的批次，不执行训练
-
-    transitions = replay_buffer.sample(batch_size)
-    batch = list(zip(*transitions))
-
-    state_batch = torch.tensor(batch[0], dtype=torch.float32)
-    action_batch = torch.tensor(batch[1], dtype=torch.long)
-    reward_batch = torch.tensor(batch[2], dtype=torch.float32)
-    next_state_batch = torch.tensor(batch[3], dtype=torch.float32)
-    done_batch = torch.tensor(batch[4], dtype=torch.float32)
-
-    # 计算当前状态下模型预测的Q值
-    q_values = model(state_batch)
-    state_action_values = q_values.gather(1, action_batch.unsqueeze(1)).squeeze(1)
-
-    # 计算下一个状态的最大预测Q值
-    next_q_values = model(next_state_batch).max(1)[0]
-    next_q_values[done_batch.bool()] = 0.0  # 对于游戏结束的状态，我们将它的Q值设为0
-
-    # 计算预期Q值
-    expected_q_values = (next_q_values * 0.99) + reward_batch  # 0.99是折扣因子
-
-    # 计算损失
-    loss = F.mse_loss(state_action_values, expected_q_values)
-
-    # 优化模型
-    optimizer.zero_grad()
-    loss.backward()
-    optimizer.step()
 
 
 def save_model(model, optimizer, filename="snake_model.pth"):
