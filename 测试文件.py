@@ -19,7 +19,11 @@ pygame.init()
 cell_size = 35
 grid = [12, 12]
 grid_size = 12
+<<<<<<< HEAD
 grid_num = grid_size * grid_size
+=======
+grid_num = grid_size*grid_size
+>>>>>>> 6b0b60fcddf6e6be5877ec1bfbc7640ee0c6ba5d
 screen_size = grid_size * cell_size
 score_height = 75
 screen = pygame.display.set_mode((screen_size, screen_size + score_height))
@@ -466,7 +470,11 @@ def game_loop_deep_q_learning_test():
     font = pygame.font.Font(None, 30)  # 选择合适的字号
 
     # 加载模型
+<<<<<<< HEAD
     load_model(model, optimizer, "snake_model_V1_2000.pth")
+=======
+    load_model(model, optimizer, "snake_model_000.pth")
+>>>>>>> 6b0b60fcddf6e6be5877ec1bfbc7640ee0c6ba5d
 
     # 游戏初始化
     running = True
@@ -520,11 +528,23 @@ def game_loop_deep_q_learning_test():
         pygame.display.flip()
         time.sleep(0.01)
 
+<<<<<<< HEAD
+=======
+        # time.sleep(0.1)  # 控制游戏速度
+>>>>>>> 6b0b60fcddf6e6be5877ec1bfbc7640ee0c6ba5d
     pygame.quit()
 
 
 
 def game_loop_deep_q_learning_train():
+    # 检查GPU可用性
+    if torch.cuda.is_available():
+        print("CUDA is available. Training on GPU...")
+        device = torch.device("cuda")
+    else:
+        print("CUDA is not available. Training on CPU...")
+        device = torch.device("cpu")
+    print(device)
     # # 游戏初始化,测试时用这里
     # running = True
     # snake = [(grid_size // 2, grid_size // 2)]  # 初始蛇的位置
@@ -536,9 +556,17 @@ def game_loop_deep_q_learning_train():
     output_size = 4  # 3个动作
     model = SnakeNet(input_size, output_size)
     optimizer = torch.optim.Adam(model.parameters(), lr=0.001)
+<<<<<<< HEAD
     replay_buffer = ReplayBuffer(1000)
+=======
+    replay_buffer = ReplayBuffer(3000)
+>>>>>>> 6b0b60fcddf6e6be5877ec1bfbc7640ee0c6ba5d
     training_rounds = 0
     font = pygame.font.Font(None, 30)  # 选择合适的字号
+    trainer = Trainer(model, optimizer)  # 实例化训练器
+
+    init_snake_length = 2
+    max_growth = grid_num - init_snake_length
 
     trainer = Trainer(model, optimizer)  # 实例化训练器
 
@@ -547,6 +575,12 @@ def game_loop_deep_q_learning_train():
 
     # 初始化奖励参数
     min_distance = float('inf')  # 设置为无限大，以便任何实际距离都会小于它
+    best_score = -float('inf')  # 初始化为负无穷大，保证任何分数都大于它
+
+    # 用于保存2500轮内的最佳模型
+    best_model_state = None
+    best_optimizer_state = None
+    last_save_round = 0
 
     # 用于保存2500轮内的最佳模型
     best_model_state = None
@@ -583,8 +617,11 @@ def game_loop_deep_q_learning_train():
         # 统计一局内的步数和分数
         score = 0
         steps = 0
+<<<<<<< HEAD
         useless_steps = 0
         reward = 0
+=======
+>>>>>>> 6b0b60fcddf6e6be5877ec1bfbc7640ee0c6ba5d
 
         # # V-2 DQN: 每1000轮保存一下
         # if training_rounds % 1000 == 0:
@@ -604,6 +641,7 @@ def game_loop_deep_q_learning_train():
             # 首先调用get_current_state，得到得到食物与蛇头的相对方向和相对曼哈顿距离以及
             # 蛇头可移动的四个方向上，距离身体和边界的距离
             current_state = get_current_state(snake, food_position, grid_size)
+<<<<<<< HEAD
 
             # 算出目前的朝向
             current_direction = get_direction(snake[1], snake[0])
@@ -621,9 +659,22 @@ def game_loop_deep_q_learning_train():
 
             # 做出行动后更新蛇list
             new_head = update_snake_dqn(snake, action)
+=======
+            action_index = predict(model, current_state)
+            actions = ['UP', 'DOWN', 'LEFT', 'RIGHT']
+            action = actions[action_index]
+            # 做完一步后，step+1
+            steps += 1
+
+            # 做出行动后更新蛇list
+            new_head = update_snake(snake, action)
+            # 更新后的状态
+            next_state = get_current_state([new_head] + snake, food_position, grid_size)
+>>>>>>> 6b0b60fcddf6e6be5877ec1bfbc7640ee0c6ba5d
 
             # 初始化奖励和完成标志
 
+<<<<<<< HEAD
             dead = False
 
             # Check whether the action and position match
@@ -729,6 +780,63 @@ def game_loop_deep_q_learning_train():
             save_path = f"snake_model_{training_rounds}.pth"
             trainer.save(save_path)  # 使用封装好的方法
             print(f"Saved evert 1000 rounds model to {save_path} at round {training_rounds}")
+=======
+            # 初始化奖励和完成标志
+            reward = 0
+            done = False
+
+            # 测试区
+            # print(current_state)
+            # print("==============")
+            # print(action_index)
+            # print('***********')
+
+            # 检查新头部是否在蛇的身体部分（除了现有的头部）或是否出界
+            if new_head in snake[1:] or not (0 <= new_head[0] < grid_size and 0 <= new_head[1] < grid_size):
+                reward = -math.pow(max_growth, (grid_num - len(snake)) / max_growth) * 0.1  # 蛇撞墙或撞到自身的惩罚
+                done = True
+            else:
+                # 确定是否吃到了食物
+                if new_head == food_position:
+                    reward = len(snake) / grid_num  # 根据蛇的大小相对于棋盘大小给予奖励
+                    food_position = place_food(grid_size, snake)  # 重新放置食物
+                    snake.insert(0, new_head)  # 在列表前插入新的蛇头，因为吃到了食物
+                    score += 10
+                else:
+                    snake.insert(0, new_head)  # 在列表前插入新的蛇头
+                    snake.pop()  # 移除蛇尾，因为没有吃到食物
+                # 判断蛇是否朝向食物
+                if new_distance < np.linalg.norm([snake[1][0] - food_position[0], snake[1][1] - food_position[1]]):
+                    reward += 1 / len(snake) * 0.1  # 蛇朝向食物移动获得小奖励
+                else:
+                    reward -= 1 / len(snake) * 0.1  # 蛇远离食物移动获得小惩罚
+
+            replay_buffer.push(current_state, action_index, reward, next_state, done)
+            trainer.train_model(replay_buffer, 32)
+
+            if done:
+                if score > best_score:
+                    best_score = score
+                    best_model_state = model.state_dict()
+                    best_optimizer_state = optimizer.state_dict()
+                    last_save_round = training_rounds
+
+                if training_rounds - last_save_round >= 2500:
+                    save_path = f"snake_model_best_{training_rounds}.pth"
+                    torch.save({
+                        'model_state_dict': best_model_state,
+                        'optimizer_state_dict': best_optimizer_state
+                    }, save_path)
+                    print(f"Saved new best model to {save_path} at round {training_rounds}")
+                    last_save_round = training_rounds  # Reset the save round tracker
+                running = False
+
+        training_rounds += 1
+
+        # Print training round info every 500 rounds
+        if training_rounds % 250 == 0:
+            print(f"Round: {training_rounds}, Current Best Score: {best_score}, Steps: {steps}")
+>>>>>>> 6b0b60fcddf6e6be5877ec1bfbc7640ee0c6ba5d
 
         # Print training round info every 100 rounds
         if training_rounds % 100 == 0:
@@ -787,6 +895,12 @@ def game_loop_deep_q_learning_train():
             #
             # time.sleep(0.1)  # 控制游戏速度
 
+<<<<<<< HEAD
+=======
+    pygame.quit()
+
+
+>>>>>>> 6b0b60fcddf6e6be5877ec1bfbc7640ee0c6ba5d
 
 # def calculate_reward_v1(snake, food_position, new_head, current_min_distance):
 #     if new_head == food_position:

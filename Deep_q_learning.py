@@ -1,5 +1,8 @@
+<<<<<<< HEAD
 import math
 
+=======
+>>>>>>> 6b0b60fcddf6e6be5877ec1bfbc7640ee0c6ba5d
 import torch
 import torch.nn as nn
 import torch.optim as optim
@@ -56,6 +59,7 @@ class Trainer:
         self.optimizer = optimizer
         self.writer = SummaryWriter(log_dir)
         self.global_step = 0
+<<<<<<< HEAD
         # self.epsilon = epsilon
         # self.epsilon_decay = 0.002  # 每轮后衰减epsilon
         # self.min_epsilon = 0    # epsilon的最小值
@@ -63,15 +67,20 @@ class Trainer:
     def update_learning_rate(self, new_lr):
         for param_group in self.optimizer.param_groups:
             param_group['lr'] = new_lr
+=======
+>>>>>>> 6b0b60fcddf6e6be5877ec1bfbc7640ee0c6ba5d
 
     def train_model(self, replay_buffer, batch_size):
         # 缓存中的数据不足以形成一个完整的批次，不执行训练
         if len(replay_buffer) < batch_size:
             return
 
+<<<<<<< HEAD
         # # 训练前减少探索率
         # self.epsilon = max(self.epsilon - self.epsilon_decay, self.min_epsilon)
 
+=======
+>>>>>>> 6b0b60fcddf6e6be5877ec1bfbc7640ee0c6ba5d
         transitions = replay_buffer.sample(batch_size)
         batch = list(zip(*transitions))
 
@@ -91,7 +100,11 @@ class Trainer:
         next_q_values[done_batch.bool()] = 0.0
 
         # 计算预期Q值
+<<<<<<< HEAD
         expected_q_values = (next_q_values * 0.5) + reward_batch
+=======
+        expected_q_values = (next_q_values * 0.99) + reward_batch
+>>>>>>> 6b0b60fcddf6e6be5877ec1bfbc7640ee0c6ba5d
         loss = torch.nn.functional.mse_loss(state_action_values, expected_q_values)
 
         # 计算损失
@@ -145,8 +158,13 @@ def get_body_distances(snake, grid_size):
 
 
 # 关于在dnn中，根据输出的方向更新蛇
+<<<<<<< HEAD
 def update_snake_dqn(snake_head, direction):
     x, y = snake_head[0]
+=======
+def update_snake_dnn(snake_head, direction):
+    x, y = snake_head
+>>>>>>> 6b0b60fcddf6e6be5877ec1bfbc7640ee0c6ba5d
     if direction == 'UP':
         y -= 1
     elif direction == 'DOWN':
@@ -183,6 +201,7 @@ def load_model(model, optimizer, filename="snake_model.pth"):
         print("模型成功从", filename, "加载")
     else:
         print("未找到模型文件", filename)
+<<<<<<< HEAD
 
 
 def calculate_reward_V2(snake, new_head, food_position, grid_size, max_growth, grid_num, dead, ate_food):
@@ -200,3 +219,5 @@ def calculate_reward_V2(snake, new_head, food_position, grid_size, max_growth, g
             else:
                 reward -= 1 / len(snake) * 0.1
     return reward
+=======
+>>>>>>> 6b0b60fcddf6e6be5877ec1bfbc7640ee0c6ba5d
