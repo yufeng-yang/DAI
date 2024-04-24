@@ -202,7 +202,7 @@ def show_start_screen():
                     elif text == "Genetic_Train":
                         game_loop_genetic_train()
                     elif text == "Genetic_Test":
-                        game_loop_genetic_test(390)
+                        game_loop_genetic_test(490)
                     elif text == "CNN":
                         game_loop_cnn()
                     elif text == "DQN-Train":
@@ -441,7 +441,7 @@ def game_loop_genetic_train():
             genes = ga.best_individual.genes
             seed = ga.best_individual.seed
             game = Game(show=True, genes_list=[genes], seed=seed)
-            game.play()
+            game.one_round_game()
 
         # 每25轮，刷新一下训练情况，记录25th轮的所有代理的情况
         if generation % 25 == 0:
@@ -459,7 +459,7 @@ def game_loop_genetic_test(current_best_score):
 
     # 渲染游戏
     game = Game(show=True, genes_list=[genes], seed=seed)
-    game.play()
+    game.one_round_game()
 
 
 

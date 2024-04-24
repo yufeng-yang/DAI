@@ -25,7 +25,8 @@ Next_generation_number = 400
 
 # 可供小蛇选择移动的方向（与检测方向不同）
 MOVEABLE_DIRECTION = [(0, -1), (0, 1), (-1, 0), (1, 0)]
-MUTATE_RATE = 0.1
+# 变异率
+MUTATE_RATE = 0.15
 
 
 class Snake:
@@ -162,10 +163,10 @@ class Game:
             self.screen = pg.display.set_mode((self.width, self.height))
             self.clock = pg.time.Clock()
 
-    # play函数通过调用move（move会调用GA网络进行预测），这里play函数通过调用move实现游戏
+    # one_round_game函数通过调用move（move会调用GA网络进行预测），这里play函数通过调用move实现游戏
     # 无需输入，输出所有参与训练的蛇的分数，步数和本剧游戏的随机seed
     # 将会执行，直至所有的蛇死亡
-    def play(self):
+    def one_round_game(self):
         # 开局当然所有的蛇都还可以自由活动
         moveable_snakes = set(self.snakes)
         score = []
@@ -280,7 +281,7 @@ class Game:
 
         # 更新
         pg.display.flip()
-        # time.sleep(0.05)
+        time.sleep(0.05)
 
 
 # 定义一个游戏中的个体（说是个体，实际就是基因组作为权重的神经网络）
@@ -300,7 +301,7 @@ class IntelligentAgent:
     # 传入基因组，调用Game开启游戏，获得steps和score最终计算fitness
     def get_fitness(self):
         game = Game([self.genes])
-        self.score, self.steps, self.seed = game.play()
+        self.score, self.steps, self.seed = game.one_round_game()
         self.fitness = (self.score + 1 / self.steps) * 100000
 
 
