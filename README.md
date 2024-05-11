@@ -1,3 +1,5 @@
+**Run Final_game.py to run the game with all algorithms**
+
 Overall, this is a total of three algorithms implemented for the snake game’s AI.  
 
 A* pathfinding algorithm, using itself and its surroundings as walls  
