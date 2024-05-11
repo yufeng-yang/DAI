@@ -185,6 +185,7 @@ def show_start_screen():
     running = True
     while running:
         screen.fill(BLACK)
+
         for text, x, y in buttons:
             draw_button(screen, text, x, y, button_width, button_height, WHITE, RED, font)
 
@@ -240,10 +241,10 @@ def game_loop_human():
     # 创建一个Clock对象
     clock = pygame.time.Clock()
     # 设置帧率
-    fps = 10
+    fps = 5
 
     while running:
-        screen.fill(BLACK)  # 清空屏幕以准备新的绘制
+        screen.fill(BLACK)
 
         # 处理事件
         for event in pygame.event.get():
@@ -317,28 +318,29 @@ def game_loop_human():
 
 def game_loop_a_star():
     running = True
-    path_found = True  # 增加一个标志位来标记是否找到路径
-    snake = [(grid_size // 2, grid_size // 2)]  # 初始蛇的位置
+    # 增加一个标志位来标记是否找到路径
+    path_found = True
+    snake = [(grid_size // 2, grid_size // 2)]
     # 生成食物，food_position存储了食物的网格位置
     food_position = place_food(grid_size, snake)
 
     # Used to judge performance
     score = 0
     steps = 0
-
-    path = []  # 存储从蛇头到食物的路径
+    # 存储从蛇头到食物的路径
+    path = []
 
     # Location of Game Over Button
     game_over_button = (175, 0, 50, 30)
 
     while running:
-        screen.fill(BLACK)  # 清屏
+        screen.fill(BLACK)
 
         # 每当蛇头到达路径的终点或食物被吃掉，重新计算路径
         if not path or snake[0] == path[-1]:
             path = a_star_algorithm(grid_size, snake[0], food_position, snake)
             if not path:
-                path_found = False  # 路径未找到，更新标志位
+                path_found = False
 
         # 移动蛇：将路径的下一个位置设为新的蛇头
         if path:
@@ -346,16 +348,18 @@ def game_loop_a_star():
             new_head = path.pop(0)
             direction = get_direction(snake[0], new_head)
             snake.insert(0, new_head)
-            steps += 1  # 增加步数
+            steps += 1
 
             # 检查是否吃到食物
             if snake[0] == food_position:
-                score += 10  # 增加分数
+                score += 10
                 # After the last food is eaten, food is generated again
                 food_position = place_food(grid_size, snake)
-                path = a_star_algorithm(grid_size, snake[0], food_position, snake)  # 重新计算路径
+                # 重新计算路径
+                path = a_star_algorithm(grid_size, snake[0], food_position, snake)
             else:
-                snake.pop()  # 移除蛇尾，仅当没有吃到食物时
+                # 移除蛇尾，仅当没有吃到食物时
+                snake.pop()
 
         # 绘制网格
         draw_grid()
@@ -374,7 +378,7 @@ def game_loop_a_star():
             draw_button(screen, 'Back', *game_over_button, WHITE, RED, font)
 
         # 更新屏幕显示
-        pygame.display.flip()
+        # pygame.display.flip()
 
         # 按下Game Over
         for event in pygame.event.get():
@@ -385,16 +389,17 @@ def game_loop_a_star():
             if event.type == pygame.MOUSEBUTTONDOWN:
                 if game_over_button[0] <= event.pos[0] <= game_over_button[0] + game_over_button[2] and \
                         game_over_button[1] <= event.pos[1] <= game_over_button[1] + game_over_button[3]:
-                    show_start_screen()  # 返回到开始界面
+                    # 返回到开始界面
+                    show_start_screen()
 
         # 显示分数和步数
         font = pygame.font.Font(None, 36)
         score_text = font.render(f"Score: {score}", True, WHITE)
         steps_text = font.render(f"Steps: {steps}", True, WHITE)
-        screen.blit(score_text, (10, 10))  # 在左上角显示分数
-        screen.blit(steps_text, (screen_size - 140, 10))  # 在右上角显示步数
+        screen.blit(score_text, (10, 10))
+        screen.blit(steps_text, (screen_size - 140, 10))
 
-        pygame.display.flip()  # 更新屏幕显示
+        pygame.display.flip()
 
         # 检查游戏结束条件等
         for event in pygame.event.get():
@@ -402,8 +407,8 @@ def game_loop_a_star():
                 running = False
                 pygame.quit()
                 sys.exit()
-
-        time.sleep(0.02)  # 控制游戏速度
+        # 控制游戏速度
+        time.sleep(0.02)
 
     pygame.quit()
 
@@ -460,12 +465,14 @@ def game_loop_genetic_test(current_best_score):
     # 渲染游戏
     game = Game(show=True, genes_list=[genes], seed=seed)
     game.one_round_game()
+    show_start_screen()
 
 
 
 def game_loop_cnn():
     print("Starting CNN game loop...")
     # 在这里实现使用卷积神经网络的游戏逻辑
+    # 原计划。。。
     pass
 
 
@@ -473,22 +480,20 @@ def game_loop_cnn():
 def game_loop_deep_q_learning_test():
     screen.fill(BLACK)
 
-    # 模型初始化
-    input_size = 7  # 假设你的状态向量有7个维度
-    output_size = 4  # 四个动作
+    input_size = 7
+    output_size = 4
     model = SnakeNet(input_size, output_size)
     optimizer = torch.optim.Adam(model.parameters(), lr=0.001)
-    font = pygame.font.Font(None, 30)  # 选择合适的字号
+    font = pygame.font.Font(None, 30)
 
-    # 加载模型
     load_model(model, optimizer, "snake_model_V1_2000.pth")
 
     # 游戏初始化
     running = True
-    snake = [(grid_size // 2, grid_size // 2)]  # 初始蛇的位置
+    snake = [(grid_size // 2, grid_size // 2)]
     # 在蛇头后面添加一格身体，假设初始方向向上，那么身体应该在蛇头的下方
     initial_body_part = (snake[0][0], snake[0][1] + 1)
-    snake.append(initial_body_part)  # 添加身体部分
+    snake.append(initial_body_part)
     score = 0
     steps = 0
     food_position = place_food(grid_size, snake)
@@ -496,29 +501,32 @@ def game_loop_deep_q_learning_test():
     while running:
         screen.fill(BLACK)
         current_state = get_current_state(snake, food_position, grid_size)
-        action_index = predict(model, current_state)  # 使用模型预测下一步动作
+        # 使用模型预测
+        action_index = predict(model, current_state)
         # 算出目前的朝向
         current_direction = get_direction(snake[1], snake[0])
         actions = ['UP', 'DOWN', 'LEFT', 'RIGHT']
         action = actions[action_index]
-        steps += 1  # 增加步数
+        # 动一下，步数+1
+        steps += 1
 
         # 做出行动后更新蛇list
         new_head = update_snake(snake, action)
-        snake.insert(0, new_head)  # 在列表前插入新的蛇头
+        snake.insert(0, new_head)
 
         if new_head == food_position:
-            score += 10  # 增加分数
+            score += 10
             food_position = place_food(grid_size, snake)
         else:
-            snake.pop()  # 移除蛇尾
+            snake.pop()
         # 检查游戏是否结束
         if not (0 <= new_head[0] < grid_size and 0 <= new_head[1] < grid_size) or new_head in snake[1:]:
             print(f"Game Over. Score: {score}")
             print(snake)
+            show_start_screen()
             running = False
 
-        # 绘制游戏元素
+        # 绘制游戏
         draw_grid()
         draw_snake(snake, action)
         pygame.draw.rect(screen, RED, (
@@ -528,14 +536,14 @@ def game_loop_deep_q_learning_test():
         font = pygame.font.Font(None, 36)
         score_text = font.render(f"Score: {score}", True, WHITE)
         steps_text = font.render(f"Steps: {steps}", True, WHITE)
-        screen.blit(score_text, (10, 10))  # 在左上角显示分数
-        screen.blit(steps_text, (screen_size - 140, 10))  # 在右上角显示步数
+        screen.blit(score_text, (10, 10))
+        screen.blit(steps_text, (screen_size - 140, 10))
 
         # 更新屏幕显示
         pygame.display.flip()
         time.sleep(0.01)
 
-    pygame.quit()
+    # pygame.quit()
 
 
 
@@ -547,21 +555,22 @@ def game_loop_deep_q_learning_train():
     current_direction = 'UP'  # 初始方向
 
     # 模型初始化
-    input_size = 7  # 假设你的状态向量有7个维度
-    output_size = 4  # 3个动作
+    input_size = 7
+    output_size = 4
     model = SnakeNet(input_size, output_size)
     optimizer = torch.optim.Adam(model.parameters(), lr=0.001)
     replay_buffer = ReplayBuffer(1000)
     training_rounds = 0
-    font = pygame.font.Font(None, 30)  # 选择合适的字号
+    font = pygame.font.Font(None, 30)
 
-    trainer = Trainer(model, optimizer)  # 实例化训练器
+    trainer = Trainer(model, optimizer)
 
     init_snake_length = 2
     max_growth = grid_num - init_snake_length
 
     # 初始化奖励参数
-    min_distance = float('inf')  # 设置为无限大，以便任何实际距离都会小于它
+    # 设置为无限大，以便任何实际距离都会小于它
+    min_distance = float('inf')
 
     # 用于保存2500轮内的最佳模型
     best_model_state = None
@@ -574,12 +583,12 @@ def game_loop_deep_q_learning_train():
 
     # 关掉可视化界面，后台运行加速
     pygame.quit()
-    while training_rounds < 10001:  # 外层循环，游戏重新开始时继续
+    while training_rounds < 10001:
         # 游戏初始化
-        snake = [(grid_size // 2, grid_size // 2)]  # 初始蛇的位置
+        snake = [(grid_size // 2, grid_size // 2)]
         # 在蛇头后面添加一格身体，假设初始方向向上，那么身体应该在蛇头的下方
         initial_body_part = (snake[0][0], snake[0][1] + 1)
-        snake.append(initial_body_part)  # 添加身体部分
+        snake.append(initial_body_part)
         food_index = 0
 
         # 生成伪随机的食物
@@ -589,8 +598,8 @@ def game_loop_deep_q_learning_train():
         food_position = place_list_food(snake, food_index)
         min_distance_to_food = float('inf')
         running = True
-        training_rounds += 1  # 每重新开始一次游戏，训练轮数增加
-        closest_breakthroughs = 0  # 每次开始新游戏时重置
+        training_rounds += 1
+        closest_breakthroughs = 0
 
         # 访问的节点
         visits = []
@@ -678,10 +687,10 @@ def game_loop_deep_q_learning_train():
                 ate_food = False
                 # 确定是否吃到了食物
                 if new_head == food_position:
-                    reward += 20 + len(snake)  # 根据蛇的大小给予奖励
+                    reward += 20 + len(snake)
                     food_index = (food_index + 1) % 100
 
-                    food_position = place_list_food(snake, food_index)  # 获取新的食物位置
+                    food_position = place_list_food(snake, food_index)
                     min_distance_to_food = abs(snake[1][0] - food_position[0]) + abs(snake[1][1] - food_position[1])
                     closest_breakthroughs = 0
 
